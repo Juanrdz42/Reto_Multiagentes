@@ -33,14 +33,11 @@
             },
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-<<<<<<< Updated upstream
-=======
                 "key": "experimental.enabled",
                 "value": "{\"m_Value\":false}"
             },
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
->>>>>>> Stashed changes
                 "key": "ShapeComponent.ResetSettings",
                 "value": "{\"m_Value\":false}"
             },
@@ -51,14 +48,6 @@
             },
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-<<<<<<< Updated upstream
-                "key": "experimental.enabled",
-                "value": "{\"m_Value\":false}"
-            },
-            {
-                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-=======
->>>>>>> Stashed changes
                 "key": "mesh.newShapesSnapToGrid",
                 "value": "{\"m_Value\":true}"
             },
@@ -93,58 +82,19 @@
                 "value": "{\"m_Value\":false}"
             },
             {
-<<<<<<< Updated upstream
-                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-                "key": "UVEditor.showPreviewMaterial",
-                "value": "{\"m_Value\":true}"
-            },
-            {
-                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-                "key": "editor.autoUpdatePreview",
-                "value": "{\"m_Value\":false}"
-            },
-            {
-                "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-                "key": "ShapeBuilder.ActiveShapeIndex",
-                "value": "{\"m_Value\":6}"
-=======
                 "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
                 "key": "ShapeBuilder.ActiveShapeIndex",
                 "value": "{\"m_Value\":4}"
->>>>>>> Stashed changes
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cube",
-<<<<<<< Updated upstream
-                "value": "{\"m_Value\":{\"x\":0.004380285739898682,\"y\":-1.1600056886672974,\"z\":-0.04271411895751953}}"
-            },
-            {
-                "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "ShapeBuilder.LastSize.Plane",
-                "value": "{\"m_Value\":{\"x\":-23.431690216064454,\"y\":0.0,\"z\":11.16501235961914}}"
-            },
-            {
-                "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "ShapeBuilder.LastSize.Pipe",
-                "value": "{\"m_Value\":{\"x\":-3.2393338680267336,\"y\":0.45962414145469668,\"z\":-2.978886127471924}}"
-=======
                 "value": "{\"m_Value\":{\"x\":1.3347597122192383,\"y\":0.030272386968135835,\"z\":1.4938182830810547}}"
->>>>>>> Stashed changes
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cylinder",
-<<<<<<< Updated upstream
-                "value": "{\"m_Value\":{\"x\":-1.0062499046325684,\"y\":2.213170051574707,\"z\":-0.8895149230957031}}"
-            },
-            {
-                "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "MoveElements.s_Translation",
-                "value": "{\"m_Value\":{\"x\":0.0,\"y\":1.0,\"z\":0.0}}"
-=======
                 "value": "{\"m_Value\":{\"x\":-2.2750110626220705,\"y\":1.0033886432647706,\"z\":-1.205918312072754}}"
->>>>>>> Stashed changes
             },
             {
                 "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -153,19 +103,6 @@
             },
             {
                 "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-<<<<<<< Updated upstream
-                "key": "ShapeBuilder.LastRotation.Plane",
-                "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
-            },
-            {
-                "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "ShapeBuilder.LastRotation.Pipe",
-                "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
-            },
-            {
-                "type": "UnityEngine.Quaternion, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-=======
->>>>>>> Stashed changes
                 "key": "ShapeBuilder.LastRotation.Cylinder",
                 "value": "{\"m_Value\":{\"x\":0.0,\"y\":0.0,\"z\":0.0,\"w\":1.0}}"
             },
@@ -176,27 +113,11 @@
             },
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-<<<<<<< Updated upstream
-                "key": "ShapeBuilder.PivotLocation.Plane",
-                "value": "{\"m_Value\":0}"
-            },
-            {
-                "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-=======
->>>>>>> Stashed changes
                 "key": "ShapeBuilder.PivotLocation.Cube",
                 "value": "{\"m_Value\":0}"
             },
             {
                 "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-<<<<<<< Updated upstream
-                "key": "ShapeBuilder.PivotLocation.Pipe",
-                "value": "{\"m_Value\":0}"
-            },
-            {
-                "type": "UnityEngine.ProBuilder.PivotLocation, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-=======
->>>>>>> Stashed changes
                 "key": "ShapeBuilder.PivotLocation.Cylinder",
                 "value": "{\"m_Value\":0}"
             },
@@ -222,27 +143,11 @@
             },
             {
                 "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-<<<<<<< Updated upstream
-                "key": "ShapeBuilder.Plane",
-                "value": "{}"
-            },
-            {
-                "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-=======
->>>>>>> Stashed changes
                 "key": "ShapeBuilder.Cube",
                 "value": "{}"
             },
             {
                 "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-<<<<<<< Updated upstream
-                "key": "ShapeBuilder.Pipe",
-                "value": "{}"
-            },
-            {
-                "type": "UnityEngine.ProBuilder.Shapes.Shape, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-=======
->>>>>>> Stashed changes
                 "key": "ShapeBuilder.Cylinder",
                 "value": "{}"
             },
@@ -255,34 +160,6 @@
                 "type": "UnityEngine.ProBuilder.ExtrudeMethod, Unity.ProBuilder, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "editor.extrudeMethod",
                 "value": "{\"m_Value\":2}"
-<<<<<<< Updated upstream
-            },
-            {
-                "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-                "key": "uv.uvEditorGridSnapIncrement",
-                "value": "{\"m_Value\":0.125}"
-            },
-            {
-                "type": "System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
-                "key": "ExtrudeFaces.distance",
-                "value": "{\"m_Value\":0.5}"
-            },
-            {
-                "type": "UnityEditor.ProBuilder.Actions.OffsetElements+CoordinateSpace, Unity.ProBuilder.Editor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "MoveElements.s_CoordinateSpace",
-                "value": "{\"m_Value\":0}"
-            },
-            {
-                "type": "UnityEditor.ProBuilder.Actions.DetachFaces+DetachSetting, Unity.ProBuilder.Editor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "DetachFaces.target",
-                "value": "{\"m_Value\":0}"
-            },
-            {
-                "type": "UnityEditor.ProBuilder.Actions.DuplicateFaces+DuplicateFaceSetting, Unity.ProBuilder.Editor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
-                "key": "DuplicateFaces.target",
-                "value": "{\"m_Value\":1}"
-=======
->>>>>>> Stashed changes
             }
         ]
     }
