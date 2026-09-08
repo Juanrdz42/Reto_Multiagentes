@@ -10,6 +10,19 @@ public class SimMeta
     public int width;
     public int height;
     public int cell_size;
+    public float agv_diameter;
+    public float pallet_diameter;
+    public float pedestrian_radius = 12f;
+    public float PalletDiameter => pallet_diameter > 0f ? pallet_diameter : cell_size * 0.7f;
+    public float agv_clearance;
+    public string[] navigation_obstacles;
+
+    // Compatibilidad con exportaciones anteriores, que representaban AGVs como puntos.
+    public float AgvDiameter => agv_diameter > 0f ? agv_diameter : cell_size * 0.8f;
+    public float AgvClearance => Math.Max(agv_clearance, AgvDiameter / 2f);
+    public bool IsObstacle(string name) => navigation_obstacles != null
+        ? Array.IndexOf(navigation_obstacles, name) >= 0 : name.StartsWith("Rack");
+
     public int frame_sample;
     public int n_agvs;
     public int total_steps;
@@ -58,6 +71,9 @@ public class SimPalletFrame
     public string id;
     public float[] pos;
     public string state;
+    public string storage_zone;
+    public int storage_level;
+    public bool removed;
 }
 
 [Serializable]
@@ -78,6 +94,12 @@ public class SimMissionFrame
 }
 
 [Serializable]
+public class SimPedestrianFrame
+{
+    public float[] pos;
+}
+
+[Serializable]
 public class SimFrame
 {
     public int t;
@@ -86,6 +108,7 @@ public class SimFrame
     public List<SimStationFrame> stations;
     public List<SimMissionFrame> missions;
     public int completed;
+    public List<SimPedestrianFrame> pedestrians;
 }
 
 [Serializable]

@@ -19413,6 +19413,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1893779882837213900}
+  - component: {fileID: 880000000000000200}
   m_Layer: 0
   m_Name: AGV
   m_TagString: Untagged
@@ -19436,3 +19437,22 @@ Transform:
   - {fileID: 5143871252770306848}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880000000000000200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9113261992758280386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bad1efe6cdd4ac8ba707c6b76c12aee, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  forks: {fileID: 5084349643867684317}
+  wheels:
+  - {fileID: 6307804467903139284}
+  - {fileID: 6805495132805579631}
+  - {fileID: 3649140450319119744}
+  - {fileID: 1989327166321020564}
+  modelForwardYaw: -90

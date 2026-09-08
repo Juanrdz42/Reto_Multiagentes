@@ -37594,9 +37594,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jsonFileName: simulation_export.json
+  layout: {fileID: 880000000000000100}
   agvPrefabOverride: {fileID: 9113261992758280386, guid: b33499de0979a4095818c0fa65cbaefb, type: 3}
   palletPrefab: {fileID: 8844439644443633062, guid: ce3f821a5523e4029bdfeafa0bd8fad2, type: 3}
-  secondsPerFrame: 0.15
+  secondsPerFrame: 0.05
   loop: 1
   playbackSpeed: 1
   colorIdle: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
@@ -37651,7 +37652,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22e8a7fa079041e5ac689a98632833e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  floorHeight: 0
+  floorHeight: -0.8351
+  scale: 0.19
+  origin: {x: -37.75, y: 0, z: -38.5}
+  rotationY: 0
 --- !u!114 &413852918431493221
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37680,6 +37684,8 @@ GameObject:
   - component: {fileID: 734264713090011397}
   - component: {fileID: 380784545502356877}
   - component: {fileID: 159876611151664566}
+  - component: {fileID: 880000000000000100}
+  - component: {fileID: 880000000000000101}
   m_Layer: 0
   m_Name: SimulationManager
   m_TagString: Untagged
@@ -37778,6 +37784,151 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 378654963}
   m_SourcePrefab: {fileID: 100100000, guid: 750751375feb14cdaaa8ddcbe7d74f9f, type: 3}
+--- !u!4 &880000000000000000 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4192981356342620841, guid: 1ef5341cfb1d64057ada165700d2c2fc, type: 3}
+  m_PrefabInstance: {fileID: 45971399}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000001 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3323944873589332576, guid: 6302a94817a6542519905036be0705ab, type: 3}
+  m_PrefabInstance: {fileID: 47003071}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000002 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3323944873589332576, guid: 6302a94817a6542519905036be0705ab, type: 3}
+  m_PrefabInstance: {fileID: 190250878}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000003 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5541575975236259704, guid: 56ad4ab7b93d8424682d75fd271f57f7, type: 3}
+  m_PrefabInstance: {fileID: 236437355}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000004 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5541575975236259704, guid: 56ad4ab7b93d8424682d75fd271f57f7, type: 3}
+  m_PrefabInstance: {fileID: 280244335}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000005 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4192981356342620841, guid: 1ef5341cfb1d64057ada165700d2c2fc, type: 3}
+  m_PrefabInstance: {fileID: 593676456}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000006 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5541575975236259704, guid: 56ad4ab7b93d8424682d75fd271f57f7, type: 3}
+  m_PrefabInstance: {fileID: 630469325}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000007 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5541575975236259704, guid: 56ad4ab7b93d8424682d75fd271f57f7, type: 3}
+  m_PrefabInstance: {fileID: 634441094}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000008 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5541575975236259704, guid: 56ad4ab7b93d8424682d75fd271f57f7, type: 3}
+  m_PrefabInstance: {fileID: 1204865206}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000009 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9111150273628652073, guid: 750751375feb14cdaaa8ddcbe7d74f9f, type: 3}
+  m_PrefabInstance: {fileID: 1211578234}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000010 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9111150273628652073, guid: 750751375feb14cdaaa8ddcbe7d74f9f, type: 3}
+  m_PrefabInstance: {fileID: 1263807760}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000011 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4192981356342620841, guid: 1ef5341cfb1d64057ada165700d2c2fc, type: 3}
+  m_PrefabInstance: {fileID: 1321085417}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000012 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9111150273628652073, guid: 750751375feb14cdaaa8ddcbe7d74f9f, type: 3}
+  m_PrefabInstance: {fileID: 1556121271}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000013 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4192981356342620841, guid: 1ef5341cfb1d64057ada165700d2c2fc, type: 3}
+  m_PrefabInstance: {fileID: 1648064893}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880000000000000014 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9111150273628652073, guid: 750751375feb14cdaaa8ddcbe7d74f9f, type: 3}
+  m_PrefabInstance: {fileID: 8245574766765551865}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &880000000000000100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602949133278805027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acaa7f40264d420996c5d0bb6d1a3b53, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  bindings:
+  - simId: Prod Line 1
+    model: {fileID: 880000000000000000}
+  - simId: Charger 1
+    model: {fileID: 880000000000000001}
+  - simId: Charger 2
+    model: {fileID: 880000000000000002}
+  - simId: Rack C
+    model: {fileID: 880000000000000003}
+  - simId: Rack A
+    model: {fileID: 880000000000000004}
+  - simId: Prod Line 2
+    model: {fileID: 880000000000000005}
+  - simId: Rack D
+    model: {fileID: 880000000000000006}
+  - simId: Rack E
+    model: {fileID: 880000000000000007}
+  - simId: Rack B
+    model: {fileID: 880000000000000008}
+  - simId: Dock 4
+    model: {fileID: 880000000000000009}
+  - simId: Dock 1
+    model: {fileID: 880000000000000010}
+  - simId: Prod Line 3
+    model: {fileID: 880000000000000011}
+  - simId: Dock 3
+    model: {fileID: 880000000000000012}
+  - simId: Prod Line 4
+    model: {fileID: 880000000000000013}
+  - simId: Dock 2
+    model: {fileID: 880000000000000014}
+  referenceObjects:
+  - {fileID: 155874777}
+  - {fileID: 903714527}
+  - {fileID: 1546786655}
+  - {fileID: 1812766519}
+  - {fileID: 1842473638}
+  - {fileID: 2140403891}
+--- !u!114 &880000000000000101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602949133278805027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba5ae3a9220a4db596f82f39d5629a68, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  jsonFileName: simulation_export.json
+  showOverallBounds: 1
+  showZones: 1
+  showChargers: 1
+  showStations: 1
+  showAgvFootprints: 0
+  showPalletFootprint: 0
+  showLabels: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -3,14 +3,12 @@ using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// Carga simulation_export.json (generado por entregam3.py) y reproduce la
+/// Carga simulation_export.json (generado por m4.py) y reproduce la
 /// simulación en 3D: mueve un objeto por cada AGV y por cada pallet, e
 /// interpola su posición entre frames grabados para que el movimiento se vea
 /// fluido aunque el JSON solo tenga una muestra cada pocos pasos.
 ///
-/// Requiere un CoordinateMapper en la escena con al menos 2 ZoneAnchor ya
-/// colocados (ver ZoneAnchor.cs) para saber cómo convertir las posiciones
-/// 2D de la simulación a posiciones 3D reales del cuarto.
+/// Comparte CoordinateMapper con SimulationLayout y ReferenceLayoutGizmo.
 /// </summary>
 public class SimPlayer : MonoBehaviour
 {
@@ -18,15 +16,18 @@ public class SimPlayer : MonoBehaviour
     [Tooltip("Nombre del archivo dentro de Assets/StreamingAssets/")]
     public string jsonFileName = "simulation_export.json";
 
+    [Header("Escenario")]
+    public SimulationLayout layout;
+
     [Header("Visuales")]
     [Tooltip("Prefab del AGV. Si lo dejas vacío se genera un placeholder (cubo + flecha).")]
     public GameObject agvPrefabOverride;
-    [Tooltip("Prefab usado para cada pallet, p.ej. Assets/Cuarto Completo/Caja.prefab")]
+    [Tooltip("Prefab usado para cada pallet, p.ej. Assets/Caja.prefab")]
     public GameObject palletPrefab;
 
     [Header("Reproducción")]
     [Tooltip("Segundos que dura cada frame grabado al reproducirse")]
-    public float secondsPerFrame = 0.15f;
+    public float secondsPerFrame = 0.05f;
     public bool loop = true;
     [Range(0.1f, 5f)] public float playbackSpeed = 1f;
 
@@ -49,6 +50,8 @@ public class SimPlayer : MonoBehaviour
     public int CurrentCompleted { get; private set; }
     public int TotalMissions => data != null && data.meta != null ? data.meta.total_missions : 0;
 
+    public bool TryGetAgvVisual(string id, out Transform visual) => agvVisuals.TryGetValue(id, out visual);
+
     SimRoot data;
     int frameIndex;
     float timeInFrame;
@@ -65,8 +68,19 @@ public class SimPlayer : MonoBehaviour
     void Start()
     {
         if (!LoadData()) { enabled = false; return; }
+        var mapper = CoordinateMapper.Instance;
+        if (mapper == null || !mapper.Ready)
+        {
+            Debug.LogError("[SimPlayer] Falta CoordinateMapper o su escala no es válida.");
+            enabled = false;
+            return;
+        }
+        if (layout != null) layout.Apply(data, mapper);
         IndexStationAnchors();
-        FitCoordinateMapper();
+        ApplyFrame(data.frames[0], data.frames[0], 0f);
+        var cameras = GetComponent<SimulationCameraController>();
+        if (cameras == null) cameras = gameObject.AddComponent<SimulationCameraController>();
+        cameras.Initialize(this, mapper, data.meta, Camera.main);
     }
 
     bool LoadData()
@@ -93,28 +107,11 @@ public class SimPlayer : MonoBehaviour
 
     void IndexStationAnchors()
     {
-        foreach (var anchor in FindObjectsOfType<ZoneAnchor>())
+        foreach (var anchor in FindObjectsByType<ZoneAnchor>())
         {
             if (string.IsNullOrEmpty(anchor.simId)) continue;
             stationAnchors[anchor.simId] = anchor;
         }
-    }
-
-    void FitCoordinateMapper()
-    {
-        var mapper = CoordinateMapper.Instance;
-        if (mapper == null)
-        {
-            Debug.LogError("[SimPlayer] No hay un CoordinateMapper en la escena. Agrega uno a cualquier GameObject.");
-            enabled = false;
-            return;
-        }
-
-        var simPositions = new Dictionary<string, Vector2>();
-        foreach (var s in data.stations) simPositions[s.name] = new Vector2(s.pos[0], s.pos[1]);
-        foreach (var c in data.chargers) simPositions[c.name] = new Vector2(c.pos[0], c.pos[1]);
-
-        mapper.Fit(new List<ZoneAnchor>(stationAnchors.Values), simPositions);
     }
 
     void Update()
@@ -123,7 +120,7 @@ public class SimPlayer : MonoBehaviour
 
         AdvanceFrame();
 
-        float lerp = timeInFrame / secondsPerFrame;
+        float lerp = timeInFrame / FrameDuration();
         int nextIndex = Mathf.Min(frameIndex + 1, data.frames.Count - 1);
         SimFrame frameA = data.frames[frameIndex];
         SimFrame frameB = data.frames[nextIndex];
@@ -131,54 +128,107 @@ public class SimPlayer : MonoBehaviour
         ApplyFrame(frameA, frameB, lerp);
     }
 
+    float FrameDuration()
+    {
+        int next = Mathf.Min(frameIndex + 1, data.frames.Count - 1);
+        int steps = Mathf.Max(1, data.frames[next].t - data.frames[frameIndex].t);
+        return Mathf.Max(0.001f, secondsPerFrame) * steps / Mathf.Max(1, data.meta.frame_sample);
+    }
+
     void AdvanceFrame()
     {
         timeInFrame += Time.deltaTime * playbackSpeed;
-        while (timeInFrame >= secondsPerFrame)
+        while (timeInFrame >= FrameDuration())
         {
-            timeInFrame -= secondsPerFrame;
-            frameIndex++;
-            if (frameIndex >= data.frames.Count - 1)
+            timeInFrame -= FrameDuration();
+            if (frameIndex == data.frames.Count - 1)
             {
-                if (loop)
-                {
-                    frameIndex = 0;
-                }
-                else
-                {
-                    frameIndex = data.frames.Count - 2;
-                    timeInFrame = 0f;
-                    break;
-                }
+                if (loop) frameIndex = 0;
+                else { timeInFrame = 0f; break; }
+            }
+            else frameIndex++;
+            if (!loop && frameIndex == data.frames.Count - 1)
+            {
+                timeInFrame = 0f;
+                break;
             }
         }
+    }
+
+    SimulationObstacles obstacles;
+    float previousPoseTime = -1f;
+    readonly Dictionary<string, AgvMechanics> mechanics = new Dictionary<string, AgvMechanics>();
+
+    static string CarriedPallet(SimFrame frame, string agvId)
+    {
+        foreach (var mission in frame.missions)
+            if (mission.assigned == agvId && mission.status == "ASIGNADA")
+            {
+                var pallet = FindPallet(frame, mission.pallet);
+                if (pallet != null && pallet.state == "SIENDO_TRANSPORTADO") return pallet.id;
+            }
+        return null;
     }
 
     void ApplyFrame(SimFrame a, SimFrame b, float lerp)
     {
         var mapper = CoordinateMapper.Instance;
+        float poseTime = Mathf.Lerp(a.t, b.t, lerp);
+        bool reset = previousPoseTime < 0f || poseTime < previousPoseTime;
+        float elapsed = reset ? 0f : Mathf.Max(0f, poseTime - previousPoseTime)
+            * Mathf.Max(0.001f, secondsPerFrame) / Mathf.Max(1, data.meta.frame_sample);
+        previousPoseTime = poseTime;
+        var carriers = new Dictionary<string, AgvMechanics>();
 
         foreach (var agvA in a.agvs)
         {
             SimAgvFrame agvB = FindAgv(b, agvA.id) ?? agvA;
-            Vector2 simPos = Vector2.Lerp(ToV2(agvA.pos), ToV2(agvB.pos), lerp);
+            Vector2 simPos = PlaybackPosition(ToV2(agvA.pos), ToV2(agvB.pos), lerp);
             Vector3 worldPos = mapper.SimToUnity(simPos);
 
             Transform visual = GetOrCreateAgv(agvA.id);
-            Vector3 dir = worldPos - visual.position;
-            visual.position = worldPos;
-            if (dir.sqrMagnitude > 0.0001f)
-                visual.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+            Vector3 dir = mapper.SimToUnity(ToV2(agvB.pos)) - mapper.SimToUnity(ToV2(agvA.pos));
+            string cargo = CarriedPallet(a, agvA.id);
+            if (mechanics.TryGetValue(agvA.id, out var rig))
+            {
+                rig.Pose(worldPos, dir, cargo != null, elapsed, reset);
+                if (cargo != null) carriers[cargo] = rig;
+            }
+            else
+            {
+                visual.position = worldPos;
+                if (dir.sqrMagnitude > 0.0001f) visual.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            }
 
             TintAgv(visual, agvA.state);
         }
 
+        foreach (var visual in palletVisuals.Values) visual.gameObject.SetActive(false);
         foreach (var pA in a.pallets)
         {
+            if (pA.removed) continue;
             SimPalletFrame pB = FindPallet(b, pA.id) ?? pA;
-            Vector2 simPos = Vector2.Lerp(ToV2(pA.pos), ToV2(pB.pos), lerp);
+            Vector2 simPos = pA.state == "SIENDO_TRANSPORTADO" && (pB.state == pA.state || pB.state == "ENTREGADO")
+                ? PlaybackPosition(ToV2(pA.pos), ToV2(pB.pos), lerp) : ToV2(pA.pos);
             Transform visual = GetOrCreatePallet(pA.id);
-            visual.position = mapper.SimToUnity(simPos);
+            visual.gameObject.SetActive(true);
+            if (carriers.TryGetValue(pA.id, out var carrier))
+            {
+                visual.position = carrier.CargoPosition;
+                visual.rotation = carrier.CargoRotation;
+            }
+            else
+            {
+                if (layout != null && layout.TryGetStoragePose(pA.storage_zone, pA.storage_level, out var storage))
+                {
+                    visual.SetPositionAndRotation(storage.position, storage.rotation);
+                }
+                else
+                {
+                    visual.position = mapper.SimToUnity(simPos);
+                    visual.rotation = Quaternion.identity;
+                }
+            }
         }
 
         foreach (var s in a.stations)
@@ -187,8 +237,34 @@ public class SimPlayer : MonoBehaviour
                 TintStation(anchor.stateRenderer, s.state);
         }
 
+        if (obstacles == null)
+        {
+            obstacles = gameObject.AddComponent<SimulationObstacles>();
+            obstacles.Initialize(layout, data.meta, mapper);
+        }
+        obstacles.Apply(a);
         CurrentMissions = a.missions;
         CurrentCompleted = a.completed;
+    }
+
+    bool warnedAboutSparseRoute;
+
+    Vector2 PlaybackPosition(Vector2 from, Vector2 to, float fraction)
+    {
+        float clearance = data.meta.AgvClearance;
+        foreach (var zone in data.zones)
+        {
+            if (!data.meta.IsObstacle(zone.name)) continue;
+            if (!SimulationPlayback.IntersectsZone(from, to, zone, clearance)) continue;
+            if (!warnedAboutSparseRoute)
+            {
+                Debug.LogWarning("[SimPlayer] Un tramo del JSON invade una zona. Se conserva la posición " +
+                    "hasta la siguiente muestra para no atravesarlo. Usa m4_simulation.py con FRAME_SAMPLE = 1 y rutas libres.");
+                warnedAboutSparseRoute = true;
+            }
+            return fraction >= 1f ? to : from;
+        }
+        return Vector2.Lerp(from, to, fraction);
     }
 
     Transform GetOrCreateAgv(string id)
@@ -198,6 +274,14 @@ public class SimPlayer : MonoBehaviour
         Transform created = agvPrefabOverride != null
             ? Instantiate(agvPrefabOverride).transform
             : BuildAgvPlaceholder();
+        var rig = created.GetComponent<AgvMechanics>();
+        float diameter = data.meta.AgvDiameter * CoordinateMapper.Instance.scale;
+        created = SimulationGeometry.PreparePlaybackVisual(created, diameter, rig != null ? rig.modelForwardYaw : 0f);
+        if (rig != null)
+        {
+            rig.Initialize(created, diameter);
+            mechanics[id] = rig;
+        }
         created.name = $"AGV_{id}";
         agvVisuals[id] = created;
         return created;
@@ -210,6 +294,7 @@ public class SimPlayer : MonoBehaviour
         Transform created = palletPrefab != null
             ? Instantiate(palletPrefab).transform
             : BuildPalletPlaceholder();
+        created = SimulationGeometry.PreparePlaybackVisual(created, data.meta.PalletDiameter * CoordinateMapper.Instance.scale);
         created.name = $"Pallet_{id}";
         palletVisuals[id] = created;
         return created;
