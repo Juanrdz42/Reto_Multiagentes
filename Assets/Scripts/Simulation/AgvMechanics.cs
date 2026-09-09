@@ -77,7 +77,11 @@ public class AgvMechanics : MonoBehaviour
             for (int i = 0; i < axles.Count; i++)
                 axles[i].Rotate(playbackRoot.right, (travel - yaw * sides[i]) / radii[i] * Mathf.Rad2Deg, Space.World);
         }
-        if (reset) lift = 0f;
+        if (reset)
+        {
+            lift = carrying ? liftHeight : 0f;
+            foreach (var axle in axles) axle.localRotation = Quaternion.identity;
+        }
         lift = Mathf.MoveTowards(lift, carrying ? liftHeight : 0f, seconds * liftHeight / 0.3f);
         if (forks != null)
             forks.localPosition = forksRest + forks.parent.InverseTransformVector(Vector3.up * lift);

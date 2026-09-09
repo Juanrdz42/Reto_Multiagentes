@@ -79,6 +79,13 @@ public class SimulationLayout : MonoBehaviour
             Vector3 bottomCenter = mapper.Rotation * new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             binding.model.position += mapper.SimToUnity(point) - bottomCenter;
 
+            if (zone != null && zone.name.StartsWith("Dock"))
+            {
+                var truck = binding.model.GetComponent<TruckDockVisual>();
+                if (truck == null) truck = binding.model.gameObject.AddComponent<TruckDockVisual>();
+                truck.Build(SimulationGeometry.BoundsInFrame(binding.model, mapper.Rotation), mapper, zone.name);
+            }
+
             // El ancla representa ahora el punto de atención, separado del centro visual.
             var station = data.stations.Find(s => s.name == binding.simId);
             Vector2 service = station != null ? new Vector2(station.pos[0], station.pos[1]) : point;
@@ -98,6 +105,8 @@ public class SimulationLayout : MonoBehaviour
                 var material = binding.model.GetComponentInChildren<Renderer>().sharedMaterial;
                 for (int level = 0; level < 2; level++)
                 {
+                    tiers[level] = binding.model.Find(level == 0 ? "StorageShelf_Lower" : "StorageShelf_Upper");
+                    if (tiers[level] != null) continue;
                     tiers[level] = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                     tiers[level].name = level == 0 ? "StorageShelf_Lower" : "StorageShelf_Upper";
                     tiers[level].GetComponent<Renderer>().sharedMaterial = material;
@@ -114,6 +123,9 @@ public class SimulationLayout : MonoBehaviour
                 shelf.SetParent(binding.model, true);
             }
         }
+        var dockWall = GetComponent<DockWallVisual>();
+        if (dockWall == null) dockWall = gameObject.AddComponent<DockWallVisual>();
+        dockWall.Apply(data, mapper, bindings);
         Physics.SyncTransforms();
         storagePoses.Clear();
         foreach (var binding in bindings)
@@ -168,6 +180,8 @@ public static class SimulationGeometry
         foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
         {
             if (filter.sharedMesh == null) continue;
+            var renderer = filter.GetComponent<Renderer>();
+            if (renderer != null && !renderer.enabled) continue;
             Bounds b = filter.sharedMesh.bounds;
             for (int i = 0; i < 8; i++)
             {

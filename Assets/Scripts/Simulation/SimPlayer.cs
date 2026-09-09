@@ -28,7 +28,10 @@ public class SimPlayer : MonoBehaviour
     [Header("Reproducción")]
     [Tooltip("Segundos que dura cada frame grabado al reproducirse")]
     public float secondsPerFrame = 0.05f;
-    public bool loop = true;
+    public bool loop = false;
+    public bool paused;
+    public SimResults Results => data == null ? null : data.results;
+    public int LastStep => data == null ? 0 : data.frames[data.frames.Count - 1].t;
     [Range(0.1f, 5f)] public float playbackSpeed = 1f;
 
     [Header("Colores del placeholder de AGV por estado")]
@@ -43,11 +46,20 @@ public class SimPlayer : MonoBehaviour
     public Color colorStationOccupied = new Color(0.85f, 0.2f, 0.2f);
     public Color colorStationOutOfService = Color.black;
 
-    public static SimPlayer Instance { get; private set; }
+    static SimPlayer instance;
+    public static SimPlayer Instance
+    {
+        get { if (instance == null) instance = FindFirstObjectByType<SimPlayer>(); return instance; }
+        private set => instance = value;
+    }
 
     /// <summary>Misiones del frame que se está mostrando ahora mismo (para UI, p.ej. MissionPanelUI).</summary>
     public List<SimMissionFrame> CurrentMissions { get; private set; }
     public int CurrentCompleted { get; private set; }
+    public int CurrentStep { get; private set; }
+    public List<SimAgvFrame> CurrentAgvs { get; private set; }
+    public List<SimStationFrame> CurrentStations { get; private set; }
+    public SimMeta Metadata => data == null ? null : data.meta;
     public int TotalMissions => data != null && data.meta != null ? data.meta.total_missions : 0;
 
     public bool TryGetAgvVisual(string id, out Transform visual) => agvVisuals.TryGetValue(id, out visual);
@@ -65,9 +77,18 @@ public class SimPlayer : MonoBehaviour
         Instance = this;
     }
 
+    void OnEnable()
+    {
+        Instance = this;
+        if (Application.isPlaying && GetComponent<SimulationSessionUI>() == null)
+            gameObject.AddComponent<SimulationSessionUI>();
+    }
+
     void Start()
     {
-        if (!LoadData()) { enabled = false; return; }
+        loop = false;
+        if (GetComponent<SimulationSessionUI>() == null) gameObject.AddComponent<SimulationSessionUI>();
+        if (!LoadData()) { paused = true; return; }
         var mapper = CoordinateMapper.Instance;
         if (mapper == null || !mapper.Ready)
         {
@@ -77,6 +98,9 @@ public class SimPlayer : MonoBehaviour
         }
         if (layout != null) layout.Apply(data, mapper);
         IndexStationAnchors();
+        var appearance = GetComponent<SimulationAppearance>();
+        if (appearance == null) appearance = gameObject.AddComponent<SimulationAppearance>();
+        appearance.Initialize();
         ApplyFrame(data.frames[0], data.frames[0], 0f);
         var cameras = GetComponent<SimulationCameraController>();
         if (cameras == null) cameras = gameObject.AddComponent<SimulationCameraController>();
@@ -85,7 +109,8 @@ public class SimPlayer : MonoBehaviour
 
     bool LoadData()
     {
-        string path = Path.Combine(Application.streamingAssetsPath, jsonFileName);
+        string cached = Path.Combine(Application.persistentDataPath, "last_simulation.json");
+        string path = File.Exists(cached) ? cached : Path.Combine(Application.streamingAssetsPath, jsonFileName);
         if (!File.Exists(path))
         {
             Debug.LogError($"[SimPlayer] No existe el archivo '{path}'. Copia simulation_export.json a Assets/StreamingAssets/.");
@@ -94,6 +119,11 @@ public class SimPlayer : MonoBehaviour
 
         string json = File.ReadAllText(path);
         data = JsonUtility.FromJson<SimRoot>(json);
+        if (data != null && data.meta != null && data.meta.authoritative_positions && data.meta.navigation_version < 4)
+        {
+            json = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, jsonFileName));
+            data = JsonUtility.FromJson<SimRoot>(json);
+        }
 
         if (data == null || data.frames == null || data.frames.Count == 0)
         {
@@ -118,7 +148,12 @@ public class SimPlayer : MonoBehaviour
     {
         if (data == null || data.frames == null || data.frames.Count < 2) return;
 
-        AdvanceFrame();
+        if (data.meta.authoritative_positions && data.meta.navigation_version < 4)
+        {
+            LoadExport(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, jsonFileName)));
+            return;
+        }
+        if (!paused) AdvanceFrame();
 
         float lerp = timeInFrame / FrameDuration();
         int nextIndex = Mathf.Min(frameIndex + 1, data.frames.Count - 1);
@@ -126,6 +161,41 @@ public class SimPlayer : MonoBehaviour
         SimFrame frameB = data.frames[nextIndex];
 
         ApplyFrame(frameA, frameB, lerp);
+    }
+
+    public void Seek(int step)
+    {
+        if (data == null || data.frames.Count == 0) return;
+        frameIndex = data.frames.FindLastIndex(frame => frame.t <= Mathf.Clamp(step, 0, LastStep));
+        frameIndex = Mathf.Max(0, frameIndex);
+        timeInFrame = 0;
+        previousPoseTime = -1;
+        ApplyFrame(data.frames[frameIndex], data.frames[Mathf.Min(frameIndex + 1, data.frames.Count - 1)], 0);
+    }
+
+    public void LoadExport(string json)
+    {
+        var loaded = JsonUtility.FromJson<SimRoot>(json);
+        if (loaded == null || loaded.meta == null || loaded.frames == null || loaded.frames.Count == 0)
+            throw new System.ArgumentException("El JSON no contiene una simulación válida.");
+        if (loaded.meta.authoritative_positions && loaded.meta.navigation_version < 4)
+            throw new System.ArgumentException("JSON antiguo sin la política actual de navegación y batería. Reinicia el servidor Python y genera otra corrida.");
+        if (loaded.meta.n_agvs != 4) throw new System.ArgumentException("Se requieren cuatro AGV.");
+        for (int i = 0; i < loaded.frames.Count; i++)
+            if (loaded.frames[i].agvs == null || loaded.frames[i].agvs.Count != 4 ||
+                (i > 0 && loaded.frames[i].t <= loaded.frames[i - 1].t))
+                throw new System.ArgumentException("Frames inválidos o desordenados.");
+        data = loaded;
+        runtimeVisualsReady = false;
+        frameIndex = 0;
+        timeInFrame = 0;
+        paused = true;
+        loop = false;
+        enabled = true;
+        Seek(0);
+        var cameras = GetComponent<SimulationCameraController>();
+        if (cameras == null) cameras = gameObject.AddComponent<SimulationCameraController>();
+        cameras.Initialize(this, CoordinateMapper.Instance, data.meta, Camera.main);
     }
 
     float FrameDuration()
@@ -170,8 +240,49 @@ public class SimPlayer : MonoBehaviour
         return null;
     }
 
+    [System.NonSerialized] bool runtimeVisualsReady;
+
+    void RestoreRuntimeVisuals()
+    {
+        if (runtimeVisualsReady) return;
+        // Los diccionarios no sobreviven a la recarga de scripts, pero los GameObjects sí.
+        // Retirar los visuales anteriores antes de reconstruir los índices.
+        foreach (var root in gameObject.scene.GetRootGameObjects())
+            if (System.Text.RegularExpressions.Regex.IsMatch(root.name, @"^(AGV_AGV-\d+|Pallet_P\d+)$"))
+                RemoveRuntimeObject(root);
+        foreach (var visual in agvVisuals.Values)
+            if (visual != null) RemoveRuntimeObject(visual.gameObject);
+        foreach (var visual in palletVisuals.Values)
+            if (visual != null) RemoveRuntimeObject(visual.gameObject);
+        agvVisuals.Clear();
+        palletVisuals.Clear();
+        mechanics.Clear();
+        foreach (var old in GetComponents<SimulationObstacles>())
+        {
+            old.enabled = false;
+            if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
+        }
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            if (child.name.StartsWith("Alarma_") || child.name.StartsWith("Peaton_"))
+                RemoveRuntimeObject(child.gameObject);
+        }
+        obstacles = null;
+        if (layout != null) layout.Apply(data, CoordinateMapper.Instance);
+        IndexStationAnchors();
+        runtimeVisualsReady = true;
+    }
+
+    static void RemoveRuntimeObject(GameObject value)
+    {
+        value.SetActive(false);
+        if (Application.isPlaying) Destroy(value); else DestroyImmediate(value);
+    }
+
     void ApplyFrame(SimFrame a, SimFrame b, float lerp)
     {
+        RestoreRuntimeVisuals();
         var mapper = CoordinateMapper.Instance;
         float poseTime = Mathf.Lerp(a.t, b.t, lerp);
         bool reset = previousPoseTime < 0f || poseTime < previousPoseTime;
@@ -188,6 +299,17 @@ public class SimPlayer : MonoBehaviour
 
             Transform visual = GetOrCreateAgv(agvA.id);
             Vector3 dir = mapper.SimToUnity(ToV2(agvB.pos)) - mapper.SimToUnity(ToV2(agvA.pos));
+            if (reset && dir.sqrMagnitude < 0.0001f)
+            {
+                for (int i = data.frames.FindLastIndex(frame => frame.t < a.t); i >= 0; i--)
+                {
+                    var prior = FindAgv(data.frames[i], agvA.id);
+                    if (prior == null) continue;
+                    dir = worldPos - mapper.SimToUnity(ToV2(prior.pos));
+                    if (dir.sqrMagnitude > 0.0001f) break;
+                }
+                if (dir.sqrMagnitude < 0.0001f) dir = mapper.Rotation * Vector3.forward;
+            }
             string cargo = CarriedPallet(a, agvA.id);
             if (mechanics.TryGetValue(agvA.id, out var rig))
             {
@@ -243,6 +365,9 @@ public class SimPlayer : MonoBehaviour
             obstacles.Initialize(layout, data.meta, mapper);
         }
         obstacles.Apply(a);
+        CurrentAgvs = a.agvs;
+        CurrentStep = a.t;
+        CurrentStations = a.stations;
         CurrentMissions = a.missions;
         CurrentCompleted = a.completed;
     }
@@ -251,6 +376,7 @@ public class SimPlayer : MonoBehaviour
 
     Vector2 PlaybackPosition(Vector2 from, Vector2 to, float fraction)
     {
+        if (data.meta.authoritative_positions) return Vector2.Lerp(from, to, fraction);
         float clearance = data.meta.AgvClearance;
         foreach (var zone in data.zones)
         {
@@ -282,6 +408,7 @@ public class SimPlayer : MonoBehaviour
             rig.Initialize(created, diameter);
             mechanics[id] = rig;
         }
+        UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(created.gameObject, gameObject.scene);
         created.name = $"AGV_{id}";
         agvVisuals[id] = created;
         return created;
@@ -295,6 +422,7 @@ public class SimPlayer : MonoBehaviour
             ? Instantiate(palletPrefab).transform
             : BuildPalletPlaceholder();
         created = SimulationGeometry.PreparePlaybackVisual(created, data.meta.PalletDiameter * CoordinateMapper.Instance.scale);
+        UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(created.gameObject, gameObject.scene);
         created.name = $"Pallet_{id}";
         palletVisuals[id] = created;
         return created;

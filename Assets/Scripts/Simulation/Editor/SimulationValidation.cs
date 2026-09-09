@@ -24,11 +24,22 @@ public static class SimulationValidation
             Require(layout.bindings.Count == data.zones.Count + data.chargers.Count, "Faltan modelos vinculados.");
             Require(layout.bindings.All(b => b.model != null), "Hay referencias a modelos sin resolver.");
             Require(layout.bindings.Select(b => b.simId).Distinct().Count() == layout.bindings.Count, "Hay vínculos duplicados.");
+            if (layout.GetComponent<DockWallVisual>() != null && layout.GetComponent<DockWallVisual>().savedInScene)
+            {
+                Require(layout.transform.Find("WarehouseDockFacade") != null, "Los portones no están guardados en la escena.");
+                var room = roots.Single(r => r.name == "Cube");
+                Require(AssetDatabase.Contains(room.GetComponent<MeshFilter>().sharedMesh), "La malla del cuarto no es persistente.");
+                Require(roots.SelectMany(r => r.GetComponentsInChildren<Transform>()).Count(t => t.name == "TruckCargoBody") == 4,
+                    "Faltan camiones guardados antes de Play.");
+            }
             layout.Apply(data, mapper);
             CheckLayout(data, layout, mapper);
             // Volver a aplicar no debe acumular traslación, rotación ni escala.
             layout.Apply(data, mapper);
             CheckLayout(data, layout, mapper);
+            bool saved = layout.GetComponent<DockWallVisual>() != null && layout.GetComponent<DockWallVisual>().savedInScene;
+            if (!saved)
+            {
             mapper.rotationY = 30f;
             layout.Apply(data, mapper);
             CheckLayout(data, layout, mapper);
@@ -36,6 +47,17 @@ public static class SimulationValidation
             layout.Apply(data, mapper);
             CheckLayout(data, layout, mapper);
 
+            }
+            Require(roots.SelectMany(r => r.GetComponentsInChildren<Transform>()).Count(t => t.name == "TruckCargoBody") == 4,
+                "Se duplicaron los camiones.");
+            Require(layout.transform.GetComponentsInChildren<Transform>().Count(t => t.name == "WarehouseDockFacade") == 1,
+                "Se duplicó la fachada.");
+            Require(SimulationSessionUI.TryImprovement(new SimMetric { name = "Tiempo promedio de misión (pasos)", baseline = 100, proposed = 80 }, out float improvement)
+                && Mathf.Abs(improvement - 20) < 0.001f, "Signo incorrecto en mejora de tiempos.");
+            Require(SimulationSessionUI.TryImprovement(new SimMetric { name = "Misiones completadas", baseline = 10, proposed = 8 }, out improvement)
+                && Mathf.Abs(improvement + 20) < 0.001f, "Signo incorrecto en misiones.");
+            Require(!SimulationSessionUI.TryImprovement(new SimMetric { baseline = 0, proposed = 4 }, out improvement),
+                "Una base cero no debe mostrar un porcentaje inventado.");
             int blocked = 0;
             foreach (var pair in data.frames.Zip(data.frames.Skip(1), (a, b) => (a, b)))
             {
@@ -84,6 +106,36 @@ public static class SimulationValidation
                 Require(Mathf.Abs(bounds.size.x - zone.width * mapper.scale) < 0.002f, binding.simId + ": ancho incorrecto.");
                 Require(Mathf.Abs(bounds.size.z - zone.height * mapper.scale) < 0.002f, binding.simId + ": fondo incorrecto.");
             }
+            if (binding.simId.StartsWith("Dock"))
+            {
+                var truck = binding.model.GetComponent<TruckDockVisual>();
+                Require(truck != null, "Falta caja de camión.");
+                Require(layout.TryGetStoragePose(binding.simId, 0, out var cargo), "Falta piso de carga.");
+                Require(Vector3.Distance(cargo.position, truck.CargoFloor) < 0.02f,
+                    "La carga no está en el piso interior del camión.");
+                var shell = binding.model.Find("TruckCargoBody");
+                Require(shell != null && shell.Find("BackWall") != null && shell.Find("DoorHeader") != null,
+                    "Faltan paredes o marco del camión.");
+                var ray = new Ray(mapper.Rotation * new Vector3(bounds.min.x - 1f,
+                    bounds.min.y + 1f, bounds.center.z), mapper.Rotation * Vector3.right);
+                var room = layout.gameObject.scene.GetRootGameObjects().Single(g => g.name == "Cube");
+                Require(room.GetComponent<RoomDockOpening>() != null, "El cuarto no está integrado con los docks.");
+                var roomBounds = SimulationGeometry.BoundsInFrame(room.transform, mapper.Rotation);
+                Require(roomBounds.max.x <= bounds.min.x + 0.002f, "Queda una pared del cuarto detrás de los camiones.");
+                var roomCollider = room.GetComponent<MeshCollider>();
+                Require(!roomCollider.Raycast(ray, out _, bounds.size.x + 2f), "Cube bloquea el acceso al camión.");
+                var facade = layout.transform.Find("WarehouseDockFacade");
+                Require(facade != null, "Falta pared continua frente a los camiones.");
+                foreach (var collider in facade.GetComponentsInChildren<Collider>())
+                    Require(!collider.Raycast(ray, out _, 1.5f), "La pared tapa un portón.");
+                var lintelRay = new Ray(mapper.Rotation * new Vector3(bounds.min.x - 1f,
+                    bounds.max.y + 0.5f, bounds.center.z), mapper.Rotation * Vector3.right);
+                Require(facade.GetComponentsInChildren<Collider>().Any(c => c.Raycast(lintelRay, out _, 1.5f)),
+                    "La pared no continúa encima del portón.");
+                foreach (var collider in shell.GetComponentsInChildren<Collider>())
+                    Require(!collider.Raycast(ray, out _, bounds.size.x * 0.5f + 1f),
+                        "La entrada del camión está bloqueada.");
+            }
             if (binding.simId.StartsWith("Rack"))
             {
                 Require(layout.TryGetStoragePose(binding.simId, 0, out var lower), "Falta repisa inferior.");
@@ -116,6 +168,10 @@ public static class SimulationValidation
                 var a = data.frames[i];
                 var b = data.frames[Mathf.Min(i + 1, data.frames.Count - 1)];
                 apply.Invoke(player, new object[] { a, b, 0.5f });
+                Require(player.CurrentAgvs != null && player.CurrentAgvs.Count == 4, "Faltan datos de batería.");
+                foreach (var agv in a.agvs)
+                    Require(Mathf.Abs(player.CurrentAgvs.Single(item => item.id == agv.id).battery - agv.battery) < 0.001f,
+                        "La batería visible no corresponde al frame.");
                 var events = player.GetComponent<SimulationObstacles>();
                 Require(events != null && events.VisiblePeople == (a.pedestrians == null ? 0 : a.pedestrians.Count),
                     "Los peatones visibles no coinciden con el JSON.");
@@ -166,6 +222,17 @@ public static class SimulationValidation
                 Require(pallet.Value.gameObject.activeSelf == data.frames[0].pallets.Any(p => p.id == pallet.Key && !p.removed),
                     "Un pallet de la vuelta anterior permanece visible.");
 
+            // Simular la pérdida de diccionarios al recompilar con Play activo.
+            agvs.Clear();
+            pallets.Clear();
+            type.GetField("runtimeVisualsReady", flags).SetValue(player, false);
+            apply.Invoke(player, new object[] { data.frames[138], data.frames[139], 0f });
+            var liveRoots = player.gameObject.scene.GetRootGameObjects();
+            Require(liveRoots.Count(r => r.activeSelf && r.name.StartsWith("AGV_AGV-")) == data.frames[138].agvs.Count,
+                "Recompilar duplica los AGV.");
+            Require(liveRoots.Count(r => r.activeSelf && r.name.StartsWith("Pallet_P")) == data.frames[138].pallets.Count(p => !p.removed),
+                "Recompilar deja cajas huérfanas.");
+            Require(player.GetComponents<SimulationObstacles>().Length == 1, "Se duplican los eventos.");
             CheckCameras(player, data.meta, mapper);
 
             player.loop = false;
@@ -266,7 +333,9 @@ public static class SimulationValidation
             Require(Mathf.Abs(rig.Lift) < 0.0001f, "Las horquillas no bajan después de entregar.");
             before = wheel.rotation;
             rig.Pose(Vector3.one * 20f, Vector3.forward, false, 0f, true);
-            Require(Quaternion.Angle(before, wheel.rotation) < 0.01f, "El reinicio se interpreta como distancia rodada.");
+            Require(Quaternion.Angle(Quaternion.identity, wheel.parent.localRotation) < 0.01f, "El salto no reinicia la rueda.");
+            rig.Pose(root.position, Vector3.forward, true, 0f, true);
+            Require(rig.Lift > 0f, "Retroceder a un paso con carga deja las horquillas abajo.");
         }
         finally { UnityEngine.Object.DestroyImmediate(root.gameObject); }
     }

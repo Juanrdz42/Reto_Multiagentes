@@ -7,6 +7,8 @@ using System.Collections.Generic;
 [Serializable]
 public class SimMeta
 {
+    public int navigation_version;
+    public bool authoritative_positions;
     public int width;
     public int height;
     public int cell_size;
@@ -62,6 +64,7 @@ public class SimAgvFrame
     public string id;
     public float[] pos;
     public float battery;
+    public string charge_phase;
     public string state;
 }
 
@@ -114,6 +117,7 @@ public class SimFrame
 [Serializable]
 public class SimRoot
 {
+    public SimResults results;
     public SimMeta meta;
     public List<SimZone> zones;
     public List<SimNamedPos> chargers;
@@ -121,3 +125,8 @@ public class SimRoot
     public List<SimFrame> frames;
     // "log" no se mapea: JsonUtility lo ignora sin problema y no se usa en runtime.
 }
+
+[Serializable]
+public class SimMetric { public string name; public float baseline, proposed; }
+[Serializable]
+public class SimResults { public int seed_count, playback_seed; public int[] seeds; public int seed, steps; public string source; public List<SimMetric> metrics; }

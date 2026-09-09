@@ -46,6 +46,7 @@ public class SimulationCameraController : MonoBehaviour
 
     void Update()
     {
+        if (SimulationSessionUI.ResultsVisible) return;
         var keyboard = Keyboard.current;
         if (keyboard == null) return;
         int requested = 0;
@@ -62,7 +63,15 @@ public class SimulationCameraController : MonoBehaviour
 
     public void Refresh(float seconds)
     {
+        // Las referencias estáticas y no serializadas pueden perderse al recompilar en Play.
+        if (player == null) player = SimPlayer.Instance;
+        if (mapper == null) mapper = CoordinateMapper.Instance;
+        if (meta == null && player != null) meta = player.Metadata;
+        if (viewCamera == null) viewCamera = Camera.main;
         if (viewCamera == null || mapper == null || meta == null) return;
+        viewCamera.rect = MissionPanelUI.Viewport;
+        // Ajustar usando el área real disponible, no una relación de aspecto anterior.
+        viewCamera.aspect = Mathf.Max(1f, viewCamera.pixelRect.width) / Mathf.Max(1f, viewCamera.pixelRect.height);
         if (SelectedView == 5)
         {
             float width = meta.width * mapper.scale;
@@ -92,7 +101,7 @@ public class SimulationCameraController : MonoBehaviour
 
     void OnGUI()
     {
-        if (viewCamera == null) return;
+        if (viewCamera == null || MissionPanelUI.Instance != null) return;
         string view = SelectedView == 5 ? "Vista superior" : "AGV-" + SelectedView;
         GUI.Box(new Rect(12f, Screen.height - 40f, 390f, 28f), "1–4: seguir AGV   |   5: vista superior   ·   " + view);
     }

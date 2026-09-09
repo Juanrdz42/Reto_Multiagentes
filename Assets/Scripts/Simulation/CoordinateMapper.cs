@@ -6,7 +6,12 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class CoordinateMapper : MonoBehaviour
 {
-    public static CoordinateMapper Instance { get; private set; }
+    static CoordinateMapper instance;
+    public static CoordinateMapper Instance
+    {
+        get { if (instance == null) instance = FindFirstObjectByType<CoordinateMapper>(); return instance; }
+        private set => instance = value;
+    }
 
     [Min(0.0001f), Tooltip("Unidades Unity por unidad Python; igual para ambos ejes.")]
     public float scale = 0.19f;

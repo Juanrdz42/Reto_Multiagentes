@@ -24,11 +24,28 @@ public class SimulationObstacles : MonoBehaviour
         {
             if (binding.model == null) continue;
             var bounds = SimulationGeometry.BoundsInFrame(binding.model, Quaternion.identity);
-            var light = Primitive(transform, PrimitiveType.Sphere, "Alarma_" + binding.simId,
-                new Vector3(bounds.center.x, bounds.max.y + 0.6f, bounds.center.z), Vector3.one * 0.8f, red);
+            var light = new GameObject("Alarma_" + binding.simId);
+            light.transform.SetParent(transform, false);
+            light.transform.position = new Vector3(bounds.center.x, bounds.max.y + 1f, bounds.center.z);
+            var mesh = new Mesh { name = "WarningTriangle" };
+            mesh.vertices = new[] { new Vector3(-0.75f, -0.5f, 0), new Vector3(0, 0.8f, 0), new Vector3(0.75f, -0.5f, 0) };
+            mesh.triangles = new[] { 0, 1, 2 };
+            mesh.RecalculateNormals();
+            light.AddComponent<MeshFilter>().sharedMesh = mesh;
+            light.AddComponent<MeshRenderer>().sharedMaterial = orange;
+            Primitive(light.transform, PrimitiveType.Cube, "Exclamation", new Vector3(0, 0.1f, -0.04f), new Vector3(0.13f, 0.48f, 0.03f), dark);
+            Primitive(light.transform, PrimitiveType.Cube, "Dot", new Vector3(0, -0.28f, -0.04f), new Vector3(0.13f, 0.13f, 0.03f), dark);
             light.SetActive(false);
             alarms[binding.simId] = light;
         }
+    }
+
+    void LateUpdate()
+    {
+        var camera = Camera.main;
+        if (camera == null) return;
+        foreach (var marker in alarms.Values)
+            if (marker.activeSelf) marker.transform.rotation = camera.transform.rotation;
     }
 
     public void Apply(SimFrame frame)
@@ -99,6 +116,12 @@ public class SimulationObstacles : MonoBehaviour
 
     void OnDestroy()
     {
+        foreach (var marker in alarms.Values)
+            if (marker != null)
+            {
+                var mesh = marker.GetComponent<MeshFilter>().sharedMesh;
+                if (Application.isPlaying) Destroy(mesh); else DestroyImmediate(mesh);
+            }
         foreach (var material in new[] { orange, red, dark })
             if (material != null)
             {
